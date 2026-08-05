@@ -1,2 +1,1039 @@
-# Ginbiela.github.io
-habit tracker
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hábitos diarios</title>
+  <style>
+    :root {
+      --bg: #101418;
+      --ink: #f3f0e8;
+      --muted: #aeb7bd;
+      --line: #303a42;
+      --panel: #171d22;
+      --panel-strong: #20272e;
+      --accent: #31a9ad;
+      --accent-dark: #238287;
+      --green: #6bd68f;
+      --red: #ff8276;
+      --shadow: 0 16px 40px rgba(0, 0, 0, .34);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        linear-gradient(135deg, rgba(49, 169, 173, .16), transparent 28%),
+        linear-gradient(315deg, rgba(255, 130, 118, .12), transparent 30%),
+        var(--bg);
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .shell {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      align-items: end;
+      justify-items: end;
+      margin-bottom: 22px;
+    }
+
+    .actions {
+      display: grid;
+      gap: 10px;
+      justify-items: end;
+      min-width: 190px;
+      position: relative;
+    }
+
+    .backup-footer {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 16px;
+    }
+
+    .backup-footer .backup-menu {
+      width: 190px;
+      max-width: 100%;
+    }
+
+    .date-box {
+      display: grid;
+      gap: 0;
+      justify-items: end;
+      width: 100%;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .date-box input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-strong);
+      color: var(--ink);
+      padding: 11px 12px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, .18);
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .metric {
+      background: rgba(32, 39, 46, .82);
+      border: 1px solid rgba(62, 74, 83, .9);
+      border-radius: 8px;
+      padding: 14px 16px;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, .24);
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: .82rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 5px;
+      font-size: 1.55rem;
+      line-height: 1.1;
+    }
+
+    .backup-menu {
+      position: relative;
+      width: 100%;
+    }
+
+    .menu-trigger {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      height: 48px;
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 900;
+    }
+
+    .menu-trigger:hover {
+      background: var(--accent-dark);
+      border-color: var(--accent-dark);
+    }
+
+    .menu-trigger svg {
+      width: 18px;
+      height: 18px;
+      transition: transform .18s ease;
+    }
+
+    .backup-menu.open .menu-trigger svg {
+      transform: rotate(180deg);
+    }
+
+    .menu-panel {
+      position: absolute;
+      z-index: 10;
+      top: calc(100% + 8px);
+      right: 0;
+      display: none;
+      width: min(360px, calc(100vw - 32px));
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-strong);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, .3);
+    }
+
+    .backup-menu.open .menu-panel {
+      display: grid;
+      gap: 10px;
+    }
+
+    .backup-footer .menu-panel {
+      top: auto;
+      bottom: calc(100% + 8px);
+    }
+
+    .menu-config {
+      border-top: 1px solid var(--line);
+      padding-top: 10px;
+    }
+
+    .menu-config summary {
+      cursor: pointer;
+      color: var(--muted);
+      font-weight: 900;
+      list-style-position: outside;
+      padding: 2px 0;
+    }
+
+    .menu-config[open] {
+      display: grid;
+      gap: 10px;
+    }
+
+    .sync-field {
+      display: grid;
+      gap: 7px;
+      color: var(--muted);
+      font-size: .82rem;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .sync-field input {
+      width: 100%;
+      min-height: 46px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-strong);
+      color: var(--ink);
+      padding: 10px 12px;
+      text-transform: none;
+      font-weight: 650;
+    }
+
+    .sync-status {
+      min-height: 18px;
+      color: var(--muted);
+      font-size: .87rem;
+      font-weight: 700;
+    }
+
+    .sync-status.ok {
+      color: var(--green);
+    }
+
+    .sync-status.error {
+      color: var(--red);
+    }
+
+    .habits {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .habit {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      min-height: 260px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+      transition: transform .18s ease, border-color .18s ease, background .18s ease;
+    }
+
+    .habit.done {
+      border-color: rgba(107, 214, 143, .62);
+      background: #14271c;
+    }
+
+    .habit-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 48px;
+    }
+
+    .habit-name {
+      margin: 0;
+      font-size: 1.25rem;
+      line-height: 1.1;
+    }
+
+    .check {
+      position: relative;
+      display: inline-grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      flex: 0 0 42px;
+      border: 2px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-strong);
+      color: transparent;
+      cursor: pointer;
+    }
+
+    .menu-trigger:focus-visible,
+    .export-btn:focus-visible,
+    .sync-btn:focus-visible,
+    .timer-btn:focus-visible,
+    .check:focus-visible,
+    .time-btn:focus-visible {
+      outline: 3px solid rgba(22, 124, 128, .34);
+      outline-offset: 2px;
+    }
+
+    .habit.done .check {
+      border-color: var(--green);
+      background: var(--green);
+      color: #fff;
+    }
+
+    .check svg {
+      width: 23px;
+      height: 23px;
+      stroke-width: 3;
+    }
+
+    .minutes {
+      display: grid;
+      place-items: center;
+      align-content: center;
+      gap: 4px;
+      min-height: 112px;
+      padding: 18px 0;
+    }
+
+    .minutes strong {
+      font-size: clamp(2.1rem, 4vw, 3.4rem);
+      line-height: 1;
+    }
+
+    .minutes span {
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .no-time-note {
+      display: grid;
+      place-items: center;
+      align-content: center;
+      gap: 8px;
+      min-height: 112px;
+      padding: 18px 0;
+      color: var(--muted);
+      font-size: .9rem;
+      font-weight: 800;
+    }
+
+    .no-time-mark {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      color: var(--accent);
+      font-size: 1.1rem;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 48px 1fr 48px;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .export-btn,
+    .sync-btn,
+    .time-btn {
+      height: 48px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-strong);
+      color: var(--ink);
+      cursor: pointer;
+      font-weight: 900;
+    }
+
+    .sync-btn {
+      width: 100%;
+      background: var(--panel-strong);
+      color: var(--ink);
+    }
+
+    .sync-btn.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .sync-btn:hover {
+      border-color: var(--accent);
+    }
+
+    .sync-btn.primary:hover {
+      background: var(--accent-dark);
+      border-color: var(--accent-dark);
+    }
+
+    .export-btn {
+      width: 100%;
+      background: var(--panel-strong);
+      color: var(--ink);
+      border-color: var(--line);
+    }
+
+    .export-btn:hover {
+      border-color: var(--accent);
+    }
+
+    .export-note {
+      min-height: 18px;
+      color: var(--muted);
+      font-size: .8rem;
+      text-align: left;
+    }
+
+    .export-note.saved {
+      color: var(--green);
+    }
+
+    .time-btn:hover,
+    .check:hover {
+      border-color: var(--accent);
+    }
+
+    .add-time {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .add-time:hover {
+      background: var(--accent-dark);
+      border-color: var(--accent-dark);
+    }
+
+    .history {
+      background: rgba(23, 29, 34, .88);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, .3);
+    }
+
+    .history-head,
+    .history-row {
+      display: grid;
+      grid-template-columns: 1.2fr repeat(4, minmax(88px, 1fr)) .9fr;
+      gap: 8px;
+      align-items: center;
+      padding: 12px 14px;
+    }
+
+    .history-head {
+      color: var(--muted);
+      background: rgba(32, 39, 46, .94);
+      font-size: .78rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .history-row {
+      border-top: 1px solid var(--line);
+      font-size: .95rem;
+    }
+
+    .history-row strong {
+      font-weight: 850;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: #29323a;
+      color: var(--muted);
+      font-weight: 900;
+    }
+
+    .status.done {
+      background: rgba(107, 214, 143, .16);
+      color: var(--green);
+    }
+
+    .empty {
+      padding: 18px 14px;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+    }
+
+    .timer {
+      position: fixed;
+      left: 18px;
+      bottom: 18px;
+      z-index: 20;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 138px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(32, 39, 46, .92);
+      color: var(--ink);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, .3);
+      backdrop-filter: blur(10px);
+    }
+
+    .timer-time {
+      min-width: 62px;
+      font-variant-numeric: tabular-nums;
+      font-size: 1rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .timer-btn {
+      display: inline-grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--ink);
+      cursor: pointer;
+    }
+
+    .timer-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .timer.running .timer-btn {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .timer-btn svg {
+      width: 17px;
+      height: 17px;
+      fill: currentColor;
+    }
+
+    @media (max-width: 920px) {
+      .topbar,
+      .summary,
+      .habits {
+        grid-template-columns: 1fr;
+      }
+
+      .actions,
+      .date-box {
+        justify-items: stretch;
+      }
+
+      .backup-footer {
+        display: block;
+      }
+
+      .backup-footer .backup-menu {
+        width: 100%;
+      }
+
+      .export-note {
+        text-align: left;
+      }
+
+      .menu-panel {
+        left: 0;
+        right: auto;
+        width: 100%;
+      }
+
+      .habit {
+        min-height: 220px;
+      }
+
+      .history {
+        overflow-x: auto;
+      }
+
+      .history-head,
+      .history-row {
+        min-width: 760px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .shell {
+        width: min(100% - 20px, 1120px);
+        padding: 20px 0;
+      }
+
+      .summary {
+        gap: 8px;
+      }
+
+      .metric,
+      .habit {
+        padding: 13px;
+      }
+
+      .timer {
+        left: 10px;
+        bottom: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="topbar">
+      <div class="actions">
+        <label class="date-box">
+          <input id="dayPicker" type="date">
+        </label>
+      </div>
+    </section>
+
+    <section class="summary" aria-label="Resumen del día">
+      <div class="metric">
+        <span>Completados</span>
+        <strong id="completedCount">0/3</strong>
+      </div>
+      <div class="metric">
+        <span>Tiempo total</span>
+        <strong id="totalMinutes">0 min</strong>
+      </div>
+      <div class="metric">
+        <span>Racha 2 de 4</span>
+        <strong id="streakCount">0 días</strong>
+      </div>
+    </section>
+
+    <iframe id="syncFrame" name="syncFrame" title="Sincronización Google Sheets" hidden></iframe>
+    <form id="syncForm" method="post" target="syncFrame" hidden>
+      <input id="syncPayload" name="payload" type="hidden">
+    </form>
+
+    <section id="habits" class="habits" aria-label="Ítems diarios"></section>
+
+    <section class="history" aria-label="Historial">
+      <div class="history-head">
+        <span>Fecha</span>
+        <span>Ejercicio</span>
+        <span>Lectura</span>
+        <span>Dibujo</span>
+        <span>No YT</span>
+        <span>Total</span>
+      </div>
+      <div id="historyRows"></div>
+    </section>
+
+    <section class="backup-footer" aria-label="Respaldo y sincronización">
+      <div id="backupMenu" class="backup-menu">
+        <button id="backupMenuBtn" class="menu-trigger" type="button" aria-expanded="false" aria-controls="backupMenuPanel">
+          Respaldo
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+            <path d="m6 9 6 6 6-6"></path>
+          </svg>
+        </button>
+        <div id="backupMenuPanel" class="menu-panel">
+          <button id="exportBtn" class="export-btn" type="button">Exportar respaldo</button>
+          <details class="menu-config">
+            <summary>Configurar Google Sheets</summary>
+            <label class="sync-field">
+              Apps Script URL
+              <input id="googleScriptUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec">
+            </label>
+            <button id="googleLoginBtn" class="sync-btn" type="button">Login Google</button>
+          </details>
+          <span id="exportNote" class="export-note" aria-live="polite"></span>
+          <div id="syncStatus" class="sync-status" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="timer" class="timer" aria-label="Temporizador">
+    <span id="timerTime" class="timer-time">00:00</span>
+    <button id="timerToggle" class="timer-btn" type="button" aria-label="Iniciar temporizador" aria-pressed="false">
+      <svg id="timerIcon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M8 5v14l11-7z"></path>
+      </svg>
+    </button>
+  </div>
+
+  <script>
+    const HABITS = [
+      { id: "ejercicio", label: "Ejercicio", tracksTime: true },
+      { id: "lectura", label: "Lectura", tracksTime: true },
+      { id: "dibujo", label: "Dibujo", tracksTime: true },
+      { id: "noYt", label: "No YT", tracksTime: false }
+    ];
+
+    const STORAGE_KEY = "habitos-diarios-v1";
+    const GOOGLE_URL_KEY = "habitos-diarios-google-script-url";
+    const dayPicker = document.querySelector("#dayPicker");
+    const backupMenu = document.querySelector("#backupMenu");
+    const backupMenuBtn = document.querySelector("#backupMenuBtn");
+    const exportBtn = document.querySelector("#exportBtn");
+    const exportNote = document.querySelector("#exportNote");
+    const googleScriptUrl = document.querySelector("#googleScriptUrl");
+    const googleLoginBtn = document.querySelector("#googleLoginBtn");
+    const syncStatus = document.querySelector("#syncStatus");
+    const syncForm = document.querySelector("#syncForm");
+    const syncPayload = document.querySelector("#syncPayload");
+    const habitsEl = document.querySelector("#habits");
+    const completedCount = document.querySelector("#completedCount");
+    const totalMinutes = document.querySelector("#totalMinutes");
+    const streakCount = document.querySelector("#streakCount");
+    const historyRows = document.querySelector("#historyRows");
+    const timer = document.querySelector("#timer");
+    const timerTime = document.querySelector("#timerTime");
+    const timerToggle = document.querySelector("#timerToggle");
+    const timerIcon = document.querySelector("#timerIcon");
+
+    const todayKey = () => {
+      const now = new Date();
+      const offset = now.getTimezoneOffset();
+      const local = new Date(now.getTime() - offset * 60000);
+      return local.toISOString().slice(0, 10);
+    };
+
+    const emptyDay = () => HABITS.reduce((day, habit) => {
+      day[habit.id] = habit.tracksTime ? { done: false, minutes: 0 } : { done: false };
+      return day;
+    }, {});
+
+    const loadStore = () => {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+      } catch {
+        return {};
+      }
+    };
+
+    let store = loadStore();
+    let syncTimer = 0;
+    let timerSeconds = 0;
+    let timerInterval = 0;
+
+    const saveStore = () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+    };
+
+    const getBackupPayload = () => ({
+      app: "habitos-diarios",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      data: store
+    });
+
+    const setSyncStatus = (message, kind = "") => {
+      syncStatus.textContent = message;
+      syncStatus.className = `sync-status ${kind}`.trim();
+    };
+
+    const setBackupMenu = (open) => {
+      backupMenu.classList.toggle("open", open);
+      backupMenuBtn.setAttribute("aria-expanded", String(open));
+    };
+
+    const formatTimer = (seconds) => {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const rest = seconds % 60;
+      const pad = (value) => String(value).padStart(2, "0");
+
+      if (hours) return `${hours}:${pad(minutes)}:${pad(rest)}`;
+      return `${pad(minutes)}:${pad(rest)}`;
+    };
+
+    const renderTimer = () => {
+      timerTime.textContent = formatTimer(timerSeconds);
+      const running = Boolean(timerInterval);
+      timer.classList.toggle("running", running);
+      timerToggle.setAttribute("aria-pressed", String(running));
+      timerToggle.setAttribute("aria-label", running ? "Pausar temporizador" : "Iniciar temporizador");
+      timerIcon.innerHTML = running
+        ? '<path d="M7 5h4v14H7z"></path><path d="M13 5h4v14h-4z"></path>'
+        : '<path d="M8 5v14l11-7z"></path>';
+    };
+
+    const toggleTimer = () => {
+      if (timerInterval) {
+        window.clearInterval(timerInterval);
+        timerInterval = 0;
+        renderTimer();
+        return;
+      }
+
+      timerInterval = window.setInterval(() => {
+        timerSeconds += 1;
+        renderTimer();
+      }, 1000);
+      renderTimer();
+    };
+
+    const exportBackup = () => {
+      const payload = getBackupPayload();
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `habitos-diarios-${todayKey()}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+
+      exportNote.textContent = "Respaldo descargado";
+      exportNote.classList.add("saved");
+      window.setTimeout(() => {
+        exportNote.textContent = "";
+        exportNote.classList.remove("saved");
+      }, 2600);
+    };
+
+    const normalizeScriptUrl = () => googleScriptUrl.value.trim();
+
+    const saveGoogleScriptUrl = () => {
+      const url = normalizeScriptUrl();
+      if (url) {
+        localStorage.setItem(GOOGLE_URL_KEY, url);
+      } else {
+        localStorage.removeItem(GOOGLE_URL_KEY);
+      }
+      return url;
+    };
+
+    const loginGoogle = () => {
+      const url = saveGoogleScriptUrl();
+      if (!url) {
+        setSyncStatus("Pegá primero la URL del Apps Script.", "error");
+        googleScriptUrl.focus();
+        return;
+      }
+
+      window.open(url, "_blank", "noopener");
+      setSyncStatus("Se abrió Google para iniciar sesión y autorizar la hoja.");
+    };
+
+    const syncToGoogleSheets = ({ silent = false } = {}) => {
+      const url = saveGoogleScriptUrl();
+      if (!url) {
+        if (!silent) {
+          setSyncStatus("Pegá primero la URL del Apps Script.", "error");
+          googleScriptUrl.focus();
+        }
+        return;
+      }
+
+      syncForm.action = url;
+      syncPayload.value = JSON.stringify(getBackupPayload());
+      syncForm.submit();
+      setSyncStatus("Sincronizado con Google Sheets.", "ok");
+    };
+
+    const scheduleGoogleSync = () => {
+      window.clearTimeout(syncTimer);
+      syncTimer = window.setTimeout(() => {
+        syncToGoogleSheets({ silent: true });
+      }, 650);
+    };
+
+    const ensureDay = (date) => {
+      if (!store[date]) {
+        store[date] = emptyDay();
+      }
+      HABITS.forEach((habit) => {
+        if (!store[date][habit.id]) {
+          store[date][habit.id] = habit.tracksTime ? { done: false, minutes: 0 } : { done: false };
+        }
+      });
+      return store[date];
+    };
+
+    const formatDate = (dateKey) => {
+      const [year, month, day] = dateKey.split("-");
+      return `${day}/${month}/${year}`;
+    };
+
+    const formatMinutes = (minutes) => {
+      if (minutes < 60) return `${minutes} min`;
+      const hours = Math.floor(minutes / 60);
+      const rest = minutes % 60;
+      return rest ? `${hours} h ${rest} min` : `${hours} h`;
+    };
+
+    const isStreakDay = (day) => HABITS.filter((habit) => day[habit.id]?.done).length >= 2;
+
+    const getPerfectStreak = () => {
+      let streak = 0;
+      const cursor = new Date(`${todayKey()}T12:00:00`);
+
+      while (true) {
+        const key = cursor.toISOString().slice(0, 10);
+        if (!store[key] || !isStreakDay(store[key])) break;
+        streak += 1;
+        cursor.setDate(cursor.getDate() - 1);
+      }
+
+      return streak;
+    };
+
+    const updateHabit = (habitId, changes) => {
+      const day = ensureDay(dayPicker.value);
+      day[habitId] = { ...day[habitId], ...changes };
+      saveStore();
+      render();
+      scheduleGoogleSync();
+    };
+
+    const changeMinutes = (habitId, delta) => {
+      const day = ensureDay(dayPicker.value);
+      const current = day[habitId].minutes;
+      updateHabit(habitId, { minutes: Math.max(0, current + delta) });
+    };
+
+    const renderHabits = (day) => {
+      habitsEl.innerHTML = HABITS.map((habit) => {
+        const item = day[habit.id];
+        const doneClass = item.done ? " done" : "";
+        const checked = item.done ? "true" : "false";
+
+        return `
+          <article class="habit${doneClass}">
+            <div class="habit-header">
+              <h2 class="habit-name">${habit.label}</h2>
+              <button class="check" type="button" data-action="toggle" data-id="${habit.id}" aria-pressed="${checked}" aria-label="Marcar ${habit.label}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                  <path d="M20 6 9 17l-5-5"></path>
+                </svg>
+              </button>
+            </div>
+            ${habit.tracksTime ? `
+              <div class="minutes">
+                <strong>${formatMinutes(item.minutes)}</strong>
+                <span>dedicados</span>
+              </div>
+              <div class="controls">
+                <button class="time-btn" type="button" data-action="minus" data-id="${habit.id}" aria-label="Restar 10 minutos">-</button>
+                <button class="time-btn add-time" type="button" data-action="plus" data-id="${habit.id}" aria-label="Sumar 10 minutos">+10 min</button>
+                <button class="time-btn" type="button" data-action="plus30" data-id="${habit.id}" aria-label="Sumar 30 minutos">+30</button>
+              </div>
+            ` : `<div class="no-time-note"><span class="no-time-mark">✓</span><span>Solo marcar</span></div>`}
+          </article>
+        `;
+      }).join("");
+    };
+
+    const renderSummary = (day) => {
+      const done = HABITS.filter((habit) => day[habit.id].done).length;
+      const minutes = HABITS
+        .filter((habit) => habit.tracksTime)
+        .reduce((total, habit) => total + day[habit.id].minutes, 0);
+
+      completedCount.textContent = `${done}/4`;
+      totalMinutes.textContent = formatMinutes(minutes);
+      streakCount.textContent = `${getPerfectStreak()} días`;
+    };
+
+    const renderHistory = () => {
+      const rows = Object.keys(store)
+        .sort((a, b) => b.localeCompare(a))
+        .slice(0, 14)
+        .map((date) => {
+          const day = ensureDay(date);
+          const total = HABITS
+            .filter((habit) => habit.tracksTime)
+            .reduce((sum, habit) => sum + day[habit.id].minutes, 0);
+          const cells = HABITS.map((habit) => {
+            const item = day[habit.id];
+            const statusClass = item.done ? "status done" : "status";
+            const mark = item.done ? "OK" : "-";
+            const detail = habit.tracksTime ? ` ${formatMinutes(item.minutes)}` : "";
+            return `<span><span class="${statusClass}">${mark}</span>${detail}</span>`;
+          }).join("");
+
+          return `
+            <div class="history-row">
+              <strong>${formatDate(date)}</strong>
+              ${cells}
+              <strong>${formatMinutes(total)}</strong>
+            </div>
+          `;
+        }).join("");
+
+      historyRows.innerHTML = rows || `<div class="empty">Todavía no hay registros.</div>`;
+    };
+
+    const render = () => {
+      const day = ensureDay(dayPicker.value);
+      renderHabits(day);
+      renderSummary(day);
+      renderHistory();
+    };
+
+    habitsEl.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-action]");
+      if (!button) return;
+
+      const { action, id } = button.dataset;
+      const item = ensureDay(dayPicker.value)[id];
+
+      if (action === "toggle") updateHabit(id, { done: !item.done });
+      if (action === "plus") changeMinutes(id, 10);
+      if (action === "plus30") changeMinutes(id, 30);
+      if (action === "minus") changeMinutes(id, -10);
+    });
+
+    dayPicker.addEventListener("change", render);
+    backupMenuBtn.addEventListener("click", () => {
+      setBackupMenu(!backupMenu.classList.contains("open"));
+    });
+    document.addEventListener("click", (event) => {
+      if (!backupMenu.contains(event.target)) setBackupMenu(false);
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") setBackupMenu(false);
+    });
+    exportBtn.addEventListener("click", exportBackup);
+    googleLoginBtn.addEventListener("click", loginGoogle);
+    googleScriptUrl.addEventListener("change", () => {
+      saveGoogleScriptUrl();
+      setSyncStatus("Google Sheets configurado. Los próximos cambios se sincronizan solos.", "ok");
+    });
+    timerToggle.addEventListener("click", toggleTimer);
+
+    dayPicker.value = todayKey();
+    googleScriptUrl.value = localStorage.getItem(GOOGLE_URL_KEY) || "";
+    ensureDay(dayPicker.value);
+    saveStore();
+    renderTimer();
+    render();
+  </script>
+</body>
+</html>
