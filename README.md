@@ -864,6 +864,28 @@
       }, 650);
     };
 
+    const loadFromGoogleSheets = async () => {
+      const url = normalizeScriptUrl();
+      if (!url) return;
+
+      setSyncStatus("Cargando datos desde Google Sheets...");
+      try {
+        const response = await fetch(`${url}?action=read&t=${Date.now()}`, { cache: "no-store" });
+        if (!response.ok) throw new Error("No se pudo consultar Google Sheets.");
+
+        const payload = await response.json();
+        if (!payload.ok || !payload.data) throw new Error("Google Sheets devolvio una respuesta invalida.");
+
+        store = payload.data;
+        saveStore();
+        ensureDay(dayPicker.value);
+        render();
+        setSyncStatus("Datos cargados desde Google Sheets.", "ok");
+      } catch (error) {
+        setSyncStatus("No se pudieron cargar los datos de Google Sheets. Se muestra la copia local.", "error");
+      }
+    };
+
     const ensureDay = (date) => {
       if (!store[date]) {
         store[date] = emptyDay();
@@ -1034,6 +1056,7 @@
     saveStore();
     renderTimer();
     render();
+    loadFromGoogleSheets();
   </script>
 </body>
 </html>
