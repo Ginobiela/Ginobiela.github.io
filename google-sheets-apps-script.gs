@@ -2,7 +2,11 @@ const SPREADSHEET_NAME = "Habitos diarios";
 const SHEET_NAME = "Historial";
 const HABITS = ["ejercicio", "lectura", "dibujo"];
 
-function doGet() {
+function doGet(event) {
+  if (event && event.parameter && event.parameter.action === "read") {
+    return readData_();
+  }
+
   const spreadsheet = getOrCreateSpreadsheet_();
   const email = Session.getActiveUser().getEmail() || "Google conectado";
   const html = `
@@ -19,16 +23,92 @@ function doGet() {
     .setTitle("Habitos diarios conectado");
 }
 
+function readData_() {
+  return jsonResponse_({ ok: true, data: readDataObject_() });
+}
+
+function readDataObject_() {
+  const spreadsheet = getOrCreateSpreadsheet_();
+  const sheet = getOrCreateSheet_(spreadsheet);
+  const values = sheet.getDataRange().getValues();
+  const data = {};
+
+  if (values.length < 2) {
+    return data;
+  }
+
+  const headers = values[0].map((header) => String(header));
+  const column = (name) => headers.indexOf(name);
+  const dateColumn = column("Fecha");
+
+  values.slice(1).forEach((row) => {
+    const date = toDateKey_(dateColumn >= 0 ? row[dateColumn] : "");
+    if (!date) return;
+
+    data[date] = {
+      ejercicio: {
+        done: toBoolean_(row[column("Ejercicio hecho")]),
+        minutes: toMinutes_(row[column("Ejercicio minutos")])
+      },
+      lectura: {
+        done: toBoolean_(row[column("Lectura hecha")]),
+        minutes: toMinutes_(row[column("Lectura minutos")])
+      },
+      dibujo: {
+        done: toBoolean_(row[column("Dibujo hecho")]),
+        minutes: toMinutes_(row[column("Dibujo minutos")])
+      },
+      noYt: {
+        done: toBoolean_(row[column("No YT hecho")])
+      }
+    };
+  });
+
+  return data;
+}
+
+function jsonResponse_(value) {
+  return ContentService
+    .createTextOutput(JSON.stringify(value))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function toBoolean_(value) {
+  return value === true || String(value).toLowerCase() === "true" || String(value).toUpperCase() === "OK";
+}
+
+function toMinutes_(value) {
+  const minutes = Number(value);
+  return Number.isFinite(minutes) ? minutes : 0;
+}
+
+function toDateKey_(value) {
+  if (!value) return "";
+  if (Object.prototype.toString.call(value) === "[object Date]") {
+    return Utilities.formatDate(value, Session.getScriptTimeZone(), "yyyy-MM-dd");
+  }
+  return String(value).slice(0, 10);
+}
+
 function doPost(event) {
   const payload = JSON.parse(event.parameter.payload || "{}");
   const spreadsheet = getOrCreateSpreadsheet_();
   const sheet = getOrCreateSheet_(spreadsheet);
-  const rows = buildRows_(payload.data || {});
 
-  sheet.clearContents();
-  sheet.getRange(1, 1, rows.length, rows[0].length).setValues(rows);
-  sheet.setFrozenRows(1);
-  sheet.autoResizeColumns(1, rows[0].length);
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const data = readDataObject_();
+    Object.assign(data, payload.data || {});
+    const rows = buildRows_(data);
+
+    sheet.clearContents();
+    sheet.getRange(1, 1, rows.length, rows[0].length).setValues(rows);
+    sheet.setFrozenRows(1);
+    sheet.autoResizeColumns(1, rows[0].length);
+  } finally {
+    lock.releaseLock();
+  }
 
   return ContentService
     .createTextOutput(JSON.stringify({
