@@ -4,7 +4,7 @@ const HABITS = ["ejercicio", "lectura", "dibujo"];
 
 function doGet(event) {
   if (event && event.parameter && event.parameter.action === "read") {
-    return readData_();
+    return readData_(event.parameter.callback || "");
   }
 
   const spreadsheet = getOrCreateSpreadsheet_();
@@ -23,8 +23,14 @@ function doGet(event) {
     .setTitle("Habitos diarios conectado");
 }
 
-function readData_() {
-  return jsonResponse_({ ok: true, data: readDataObject_() });
+function readData_(callback) {
+  const response = { ok: true, data: readDataObject_() };
+  if (callback && /^[A-Za-z_$][0-9A-Za-z_$]*$/.test(callback)) {
+    return ContentService
+      .createTextOutput(`${callback}(${JSON.stringify(response)});`)
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  return jsonResponse_(response);
 }
 
 function readDataObject_() {

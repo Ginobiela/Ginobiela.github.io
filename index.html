@@ -871,6 +871,26 @@
       }, 650);
     };
 
+    const requestGoogleData = (url) => new Promise((resolve, reject) => {
+      const callbackName = `googleSheetsCallback_${Date.now()}`;
+      const script = document.createElement("script");
+      const cleanup = () => {
+        delete window[callbackName];
+        script.remove();
+      };
+
+      window[callbackName] = (payload) => {
+        cleanup();
+        resolve(payload);
+      };
+      script.onerror = () => {
+        cleanup();
+        reject(new Error("No se pudo consultar Google Sheets."));
+      };
+      script.src = `${url}?action=read&callback=${callbackName}&t=${Date.now()}`;
+      document.head.appendChild(script);
+    });
+
     const loadFromGoogleSheets = async () => {
       const url = normalizeScriptUrl();
       if (!url) return;
@@ -878,10 +898,7 @@
       setSyncStatus("Cargando datos desde Google Sheets...");
       for (let attempt = 1; attempt <= 3; attempt += 1) {
         try {
-          const response = await fetch(`${url}?action=read&t=${Date.now()}`, { cache: "no-store" });
-          if (!response.ok) throw new Error("No se pudo consultar Google Sheets.");
-
-          const payload = await response.json();
+          const payload = await requestGoogleData(url);
           if (!payload.ok || !payload.data) throw new Error("Google Sheets devolvio una respuesta invalida.");
 
           store = payload.data;
